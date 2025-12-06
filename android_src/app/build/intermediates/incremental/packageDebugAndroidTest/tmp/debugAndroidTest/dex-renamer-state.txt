@@ -1,0 +1,4 @@
+#Sun Dec 07 00:57:54 IST 2025
+base.0=D\:\\G_AI_Antigravity\\patient-monitor\\android_src\\app\\build\\intermediates\\dex\\debugAndroidTest\\mergeProjectDexDebugAndroidTest\\0\\classes.dex
+path.0=0/classes.dex
+renamed.0=classes.dex
