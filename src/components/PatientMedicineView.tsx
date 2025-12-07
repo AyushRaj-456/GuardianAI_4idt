@@ -1,26 +1,17 @@
-// Patient Medicine Schedule View Component
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { Pill, Clock, CheckCircle, XCircle } from "lucide-react";
+import { collection, query, where, onSnapshot, setDoc, doc } from "firebase/firestore";
+import { Clock, CheckCircle2, Circle, Activity } from "lucide-react";
 
 interface PatientMedicineViewProps {
     patientId: string;
 }
 
-interface Medicine {
-    id: string;
-    name: string;
-    dosage: string;
-    times: string[];
-    instructions: string;
-}
-
 export default function PatientMedicineView({ patientId }: PatientMedicineViewProps) {
-    const [medicines, setMedicines] = useState<Medicine[]>([]);
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const [medicines, setMedicines] = useState<any[]>([]);
+    const [schedule, setSchedule] = useState<any[]>([]);
 
     useEffect(() => {
         const q = query(
@@ -30,124 +21,127 @@ export default function PatientMedicineView({ patientId }: PatientMedicineViewPr
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setMedicines(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine)));
+            const meds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMedicines(meds);
+            generateSchedule(meds);
         });
 
-        // Update current time every minute
-        const interval = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 60000);
-
-        return () => {
-            unsubscribe();
-            clearInterval(interval);
-        };
+        return () => unsubscribe();
     }, [patientId]);
 
-    const getCurrentTimeString = () => {
-        return `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
+    const generateSchedule = (meds: any[]) => {
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+        const currentHour = today.getHours();
+        const currentMinute = today.getMinutes();
+
+        let dailySchedule: any[] = [];
+
+        meds.forEach(med => {
+            if (med.times && Array.isArray(med.times)) {
+                med.times.forEach((time: string) => {
+                    const [h, m] = time.split(':').map(Number);
+
+                    // Status Calculation
+                    let status = 'upcoming'; // default
+                    const timeKey = `${dateStr}_${time}`;
+                    const isTaken = med.takenDoses && med.takenDoses[timeKey];
+
+                    if (isTaken) {
+                        status = 'taken';
+                    } else {
+                        if (h < currentHour || (h === currentHour && m < currentMinute)) {
+                            status = 'missed';
+                        } else if (h === currentHour && m >= currentMinute && m <= currentMinute + 60) {
+                            status = 'coming_soon';
+                        }
+                    }
+
+                    dailySchedule.push({
+                        ...med,
+                        time,
+                        status,
+                        sortTime: h * 60 + m
+                    });
+                });
+            }
+        });
+
+        // Sort by time
+        dailySchedule.sort((a, b) => a.sortTime - b.sortTime);
+        setSchedule(dailySchedule);
     };
 
-    const isUpcoming = (time: string) => {
-        const current = getCurrentTimeString();
-        return time > current;
+    const markAsTaken = async (medId: string, time: string) => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const key = `${todayStr}_${time}`;
+
+        try {
+            await setDoc(doc(db, "medicines", medId), {
+                takenDoses: {
+                    [key]: true // Use standard merge setDoc
+                }
+            }, { merge: true });
+        } catch (e) {
+            console.error("Error marking medicine as taken:", e);
+        }
     };
-
-    const isPast = (time: string) => {
-        const current = getCurrentTimeString();
-        return time < current;
-    };
-
-    // Get all medicine times for today
-    const todaysSchedule = medicines.flatMap(medicine =>
-        medicine.times.map(time => ({
-            time,
-            medicine: medicine.name,
-            dosage: medicine.dosage,
-            instructions: medicine.instructions,
-            status: isPast(time) ? 'past' : isUpcoming(time) ? 'upcoming' : 'now'
-        }))
-    ).sort((a, b) => a.time.localeCompare(b.time));
-
-    if (medicines.length === 0) {
-        return (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                    <Pill className="h-5 w-5 mr-2 text-purple-600" />
-                    Today's Medicine Schedule
-                </h2>
-                <div className="text-center py-8 text-gray-400">
-                    <Pill className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No medicines scheduled</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <Pill className="h-5 w-5 mr-2 text-purple-600" />
-                Today's Medicine Schedule
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <Clock className="h-5 w-5 mr-2 text-blue-600" />
+                Today's Schedule
             </h2>
 
-            <div className="space-y-3">
-                {todaysSchedule.map((item, index) => (
-                    <div
-                        key={index}
-                        className={`p-4 rounded-xl border-2 transition-all ${item.status === 'now'
-                                ? 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-300 shadow-lg'
-                                : item.status === 'upcoming'
-                                    ? 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200'
-                                    : 'bg-gray-50 border-gray-200 opacity-60'
-                            }`}
-                    >
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-2">
-                                    <Clock className={`h-4 w-4 ${item.status === 'now' ? 'text-orange-600' :
-                                            item.status === 'upcoming' ? 'text-purple-600' :
-                                                'text-gray-400'
-                                        }`} />
-                                    <span className={`font-bold text-lg ${item.status === 'now' ? 'text-orange-700' :
-                                            item.status === 'upcoming' ? 'text-purple-700' :
-                                                'text-gray-500'
-                                        }`}>
-                                        {item.time}
-                                    </span>
-                                    {item.status === 'now' && (
-                                        <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-                                            NOW
-                                        </span>
-                                    )}
+            {schedule.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
+                    <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No medicines scheduled for today.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {schedule.map((item, idx) => (
+                        <div key={`${item.id}-${idx}`} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${item.status === 'taken' ? 'bg-green-50 border-green-100' :
+                                item.status === 'missed' ? 'bg-red-50 border-red-100' :
+                                    'bg-gray-50 border-gray-100 hover:shadow-md'
+                            }`}>
+                            <div className="flex items-center space-x-3">
+                                <div className={`text-sm font-bold w-12 text-center py-1 rounded-md ${item.status === 'taken' ? 'bg-green-200 text-green-800' :
+                                        item.status === 'missed' ? 'bg-red-200 text-red-800' :
+                                            'bg-blue-100 text-blue-700'
+                                    }`}>
+                                    {item.time}
                                 </div>
-                                <h3 className="font-bold text-gray-900">{item.medicine}</h3>
-                                <p className="text-sm text-gray-600">{item.dosage}</p>
-                                {item.instructions && (
-                                    <p className="text-sm text-gray-500 italic mt-1">
-                                        📝 {item.instructions}
+                                <div>
+                                    <h3 className={`font-bold text-base ${item.status === 'taken' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                                        {item.name}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 flex items-center">
+                                        {item.dosage}
+                                        {item.instructions && <span className="ml-1">• {item.instructions}</span>}
                                     </p>
-                                )}
+                                </div>
                             </div>
-                            <div>
-                                {item.status === 'past' ? (
-                                    <XCircle className="h-6 w-6 text-gray-400" />
-                                ) : (
-                                    <CheckCircle className={`h-6 w-6 ${item.status === 'now' ? 'text-orange-500' : 'text-purple-500'
-                                        }`} />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
 
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <p className="text-sm text-blue-800">
-                    <strong>Reminder:</strong> Take your medicines on time for best results.
-                    Your caretaker will be notified 10 minutes before each dose.
-                </p>
-            </div>
+                            <button
+                                onClick={() => item.status !== 'taken' && markAsTaken(item.id, item.time)}
+                                disabled={item.status === 'taken'}
+                                className={`p-2 rounded-full transition-all ${item.status === 'taken' ? 'text-green-600 bg-green-100' :
+                                        'text-gray-300 hover:text-green-600 hover:bg-green-50'
+                                    }`}
+                                title={item.status === 'taken' ? "Taken" : "Mark as Taken"}
+                            >
+                                {item.status === 'taken' ? (
+                                    <CheckCircle2 className="h-6 w-6" />
+                                ) : (
+                                    <Circle className="h-6 w-6" />
+                                )}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

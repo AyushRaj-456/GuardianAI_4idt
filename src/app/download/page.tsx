@@ -8,7 +8,8 @@ export default function DownloadPage() {
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="bg-blue-600 p-6 text-center text-white">
                     <Smartphone className="h-12 w-12 mx-auto mb-2" />
-                    <h1 className="text-2xl font-bold">Download CareConnect App</h1>
+                    <h1 className="text-2xl font-bold">Download Guardian AI App</h1>
+
                     <p className="text-blue-100">For Android Devices</p>
                 </div>
 
@@ -16,14 +17,14 @@ export default function DownloadPage() {
                     {/* Download Button */}
                     <div className="text-center">
                         <a
-                            href="/CareConnect.apk"
+                            href="/GuardianAI.apk"
                             download
-                            className="inline-flex items-center justify-center w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition hover:scale-105"
+                            className="inline-flex items-center justify-center w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition hover:scale-105"
                         >
                             <Download className="h-6 w-6 mr-2" />
-                            Download APK
+                            Download GuardianAI
                         </a>
-                        <p className="text-xs text-gray-400 mt-2">Version 1.0 • 5.2 MB</p>
+                        <p className="text-xs text-gray-400 mt-2">Version 1.1 • 5.5 MB</p>
                     </div>
 
                     <div className="border-t border-gray-100 pt-4">

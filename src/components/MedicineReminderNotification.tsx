@@ -1,4 +1,3 @@
-// Medicine Reminder Notification Component
 "use client";
 
 import { useState, useEffect } from "react";
@@ -16,25 +15,30 @@ interface MedicineReminder {
 }
 
 interface MedicineReminderNotificationProps {
-    caretakerId: string;
+    connectedPatientIds: string[];
 }
 
-export default function MedicineReminderNotification({ caretakerId }: MedicineReminderNotificationProps) {
+export default function MedicineReminderNotification({ connectedPatientIds }: MedicineReminderNotificationProps) {
     const [reminders, setReminders] = useState<MedicineReminder[]>([]);
     const [dismissedReminders, setDismissedReminders] = useState<Set<string>>(new Set());
 
     useEffect(() => {
+        if (!connectedPatientIds || connectedPatientIds.length === 0) return;
+
         const checkReminders = () => {
             const now = new Date();
-            const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
             // Get time 10 minutes from now for advance reminder
             const reminderTime = new Date(now.getTime() + 10 * 60000);
             const reminderTimeStr = `${reminderTime.getHours().toString().padStart(2, '0')}:${reminderTime.getMinutes().toString().padStart(2, '0')}`;
 
+            // Firestore 'in' query supports up to 10 values. 
+            // For production with >10 patients, we would need to batch or separate queries.
+            // Slicing to 10 for safety in this prototype.
+            const safeIds = connectedPatientIds.slice(0, 10);
+
             const q = query(
                 collection(db, "medicines"),
-                where("caretakerId", "==", caretakerId),
+                where("patientId", "in", safeIds),
                 where("active", "==", true)
             );
 
@@ -66,26 +70,29 @@ export default function MedicineReminderNotification({ caretakerId }: MedicineRe
                         }
                     }
                 }
-
                 setReminders(upcomingReminders);
             });
-
             return unsubscribe;
         };
 
-        // Check immediately
-        const unsubscribe = checkReminders();
+        let unsubscribe: any;
+        // Function to run the check
+        const runCheck = () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+            unsubscribe = checkReminders();
+        };
 
-        // Check every minute
-        const interval = setInterval(() => {
-            checkReminders();
-        }, 60000);
+        // Run immediately
+        runCheck();
+
+        // Check every minute to update the "10 minutes ahead" window
+        const interval = setInterval(runCheck, 60000);
 
         return () => {
-            if (unsubscribe) unsubscribe();
+            if (typeof unsubscribe === 'function') unsubscribe();
             clearInterval(interval);
         };
-    }, [caretakerId, dismissedReminders]);
+    }, [connectedPatientIds, dismissedReminders]);
 
     const dismissReminder = (reminderId: string) => {
         setDismissedReminders(prev => new Set(prev).add(reminderId));

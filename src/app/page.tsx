@@ -30,7 +30,7 @@ export default function Home() {
           <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
             <Activity className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">CareConnect</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Guardian AI</h1>
           <p className="text-gray-500">
             Real-time patient safety & caretaker monitoring
           </p>

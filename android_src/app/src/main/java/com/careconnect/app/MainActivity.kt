@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     // REPLACE THIS WITH YOUR DEPLOYED URL (e.g., Vercel URL)
     // For local testing on emulator, use http://10.0.2.2:3000
-    private val WEBSITE_URL = "https://patient-monitor-careconnect.vercel.app" 
+    private val WEBSITE_URL = "https://guardian-h1ig3wu7c-ayushs-projects-20d7a4c1.vercel.app" 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

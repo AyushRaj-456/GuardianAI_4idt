@@ -12,12 +12,16 @@ const groq = new Groq({
 });
 
 const BASE_SYSTEM_PROMPT =
-    "You are CareConnect AI, a compassionate health assistant. " +
+    "You are Guardian AI, a compassionate health assistant. " +
     "Be warm, concise, and helpful. In emergencies, advise calling local emergency services.\n\n" +
     "CAPABILITY: You can send messages to the patient's caretakers if requested.\n" +
-    "INSTRUCTION: To send a message, you must output a command in this EXACT format at the end of your response:\n" +
-    "<<<SEND_MESSAGE={\"recipientId\": \"ID\", \"message\": \"CONTENT\"}>>>\n" +
-    "Example: \"I will tell him. <<<SEND_MESSAGE={\"recipientId\": \"123\", \"message\": \"Help needed\"}>>>\"";
+    "INSTRUCTION: To perform actions, output a command in the EXACT format at the end of your response:\n" +
+    "1. MESSAGE CARETAKER: <<<SEND_MESSAGE={\"recipientId\": \"ID\", \"message\": \"CONTENT\"}>>>\n" +
+    "2. ADD MEDICINE: <<<ADD_MEDICINE={\"name\": \"Name\", \"dosage\": \"Dosage\", \"times\": [\"HH:MM\", \"HH:MM\"], \"instructions\": \"Notes\"}>>>\n" +
+    "3. VISUALIZE: <<<VISUALIZE=description>>>\n" +
+    "CRITICAL RULE: When suggesting ANY treatment, medicine, remedy, or exercise, you MUST use the VISUALIZE command to show an image of it.\n" +
+    "Example: \"Take Aspirin. <<<VISUALIZE=Box of Aspirin tablets>>>\"\n" +
+    "Example: \"Apply Aloe Vera. <<<VISUALIZE=Fresh Aloe Vera plant gel>>>\"";
 
 export async function POST(req: Request) {
     if (!API_KEY) {

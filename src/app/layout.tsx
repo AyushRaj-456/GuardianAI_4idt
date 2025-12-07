@@ -5,7 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 
 
 export const metadata: Metadata = {
-  title: "CareConnect - Patient Monitoring",
+  title: "Guardian AI - Patient Monitoring",
   description: "Real-time patient safety and caretaker monitoring platform",
 };
 

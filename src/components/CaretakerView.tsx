@@ -3,8 +3,8 @@
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
-import { Send, UserPlus, Clock, CheckCircle, XCircle, ShieldAlert, Save, Trash2, Pill } from "lucide-react";
+import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
+import { Send, UserPlus, Clock, CheckCircle, XCircle, ShieldAlert, Save, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamically import Map component to avoid SSR issues with Leaflet
@@ -15,9 +15,12 @@ const Map = dynamic(() => import("./Map"), {
 
 import ChatSystem from "./ChatSystem";
 import UnreadIndicator from "./UnreadIndicator";
-import MedicineSchedule from "./MedicineSchedule";
+import MedicineManager from "./MedicineManager"; // Changed from MedicineSchedule
 import MedicineReminderNotification from "./MedicineReminderNotification";
+import AIChatBot from "./AIChatBot"; // NEW
 import TasksView from "./TasksView";
+import AlertsView from "./AlertsView"; // NEW Alerts View
+import HealthAdvisorView from "./HealthAdvisorView"; // NEW Health Advisor
 
 export default function CaretakerView() {
     const { user, logout } = useAuth();
@@ -38,7 +41,22 @@ export default function CaretakerView() {
     const [medicinePatient, setMedicinePatient] = useState<any>(null);
 
     // View State
-    const [currentView, setCurrentView] = useState<'dashboard' | 'tasks'>('dashboard');
+    const [currentView, setCurrentView] = useState<'dashboard' | 'tasks' | 'alerts' | 'health-advisor'>('dashboard');
+    const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+
+    // Subscribe to Unread Alerts Count
+    useEffect(() => {
+        if (!user) return;
+        const q = query(
+            collection(db, "alerts"),
+            where("caretakerId", "==", user.uid),
+            where("read", "==", false)
+        );
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setUnreadAlertsCount(snapshot.size);
+        });
+        return () => unsubscribe();
+    }, [user]);
 
     useEffect(() => {
         if (!user) return;
@@ -188,7 +206,7 @@ export default function CaretakerView() {
         <div className="p-6 max-w-6xl mx-auto h-screen flex flex-col">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Caretaker Dashboard</h1>
+                    <h1 className="text-3xl font-bold text-blue-600">Caretaker Dashboard</h1>
                     <p className="text-gray-500">Monitor and manage your patients</p>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -224,11 +242,40 @@ export default function CaretakerView() {
                 >
                     📋 Tasks
                 </button>
+                <button
+                    onClick={() => setCurrentView('alerts')}
+                    className={`px-6 py-3 font-semibold transition-all border-b-2 relative ${currentView === 'alerts'
+                        ? 'border-red-600 text-red-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    ⚠️ Automated Warnings
+                    {unreadAlertsCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
+                            {unreadAlertsCount}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setCurrentView('health-advisor')}
+                    className={`px-6 py-3 font-semibold transition-all border-b-2 ${currentView === 'health-advisor'
+                        ? 'border-teal-600 text-teal-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    🌿 Health Advisor
+                </button>
             </div>
 
             {currentView === 'tasks' ? (
                 /* Tasks View */
                 user && <TasksView caretakerId={user.uid} />
+            ) : currentView === 'alerts' ? (
+                /* Alerts View */
+                user && <AlertsView caretakerId={user.uid} />
+            ) : currentView === 'health-advisor' ? (
+                /* Health Advisor View - Full Height */
+                user && <div className="h-full pb-6"><HealthAdvisorView user={user} role="caretaker" contextData={{ patientName: selectedPatient?.name }} /></div>
             ) : (
 
                 <div className="grid md:grid-cols-3 gap-6 flex-1 min-h-0">
@@ -236,7 +283,7 @@ export default function CaretakerView() {
                     <div className="md:col-span-1 space-y-6 overflow-y-auto pr-2">
                         {/* Add Patient */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h2 className="text-lg font-semibold mb-4 flex items-center">
+                            <h2 className="text-lg font-semibold mb-4 flex items-center text-blue-600">
                                 <UserPlus className="h-5 w-5 mr-2 text-blue-600" />
                                 Add Patient
                             </h2>
@@ -247,7 +294,7 @@ export default function CaretakerView() {
                                         type="email"
                                         value={patientEmail}
                                         onChange={(e) => setPatientEmail(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900"
                                         placeholder="patient@example.com"
                                         required
                                     />
@@ -265,7 +312,7 @@ export default function CaretakerView() {
 
                         {/* Requests List */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h2 className="text-lg font-semibold mb-4">Requests</h2>
+                            <h2 className="text-lg font-semibold mb-4 text-blue-600">Requests</h2>
                             <div className="space-y-3">
                                 {requests.length === 0 ? (
                                     <p className="text-gray-400 text-sm">No requests.</p>
@@ -289,7 +336,7 @@ export default function CaretakerView() {
 
                         {/* Connected Patients List */}
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h2 className="text-lg font-semibold mb-4">Active Patients</h2>
+                            <h2 className="text-lg font-semibold mb-4 text-blue-600">Active Patients</h2>
                             <div className="space-y-3">
                                 {connectedPatients.length === 0 ? (
                                     <p className="text-gray-400 text-sm">No active patients.</p>
@@ -462,12 +509,13 @@ export default function CaretakerView() {
                             />
                         )}
 
-                        {/* Medicine Schedule Modal */}
+                        {/* Medicine Manager Modal (Replaces MedicineSchedule) */}
                         {medicinePatient && user && (
-                            <MedicineSchedule
+                            <MedicineManager
                                 patientId={medicinePatient.id}
                                 patientName={medicinePatient.name || medicinePatient.email}
-                                caretakerId={user.uid}
+                                currentUserRole="caretaker"
+                                currentUserId={user.uid}
                                 onClose={() => setMedicinePatient(null)}
                             />
                         )}
@@ -476,7 +524,22 @@ export default function CaretakerView() {
             )}
 
             {/* Medicine Reminder Notifications */}
-            {user && <MedicineReminderNotification caretakerId={user.uid} />}
+            {user && <MedicineReminderNotification connectedPatientIds={connectedPatients.map(p => p.id)} />}
+
+            {/* AI Chatbot for Caretaker */}
+            {user && (
+                <AIChatBot
+                    user={user}
+                    role="caretaker"
+                    // Target specific patient if selected or "medicinePatient" is active (contextual)
+                    // If no specific patient selected, default to the first one or prompt user (AI prompt handles generic?) 
+                    // We'll pass selectedPatient or the first one as default context
+                    targetPatientId={selectedPatient?.id || connectedPatients[0]?.id}
+                    contextData={{
+                        patientName: selectedPatient?.name || connectedPatients[0]?.name
+                    }}
+                />
+            )}
         </div>
     );
 }
