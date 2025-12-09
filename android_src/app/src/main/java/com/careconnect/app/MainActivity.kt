@@ -39,6 +39,11 @@ class MainActivity : AppCompatActivity() {
         settings.allowContentAccess = true
         settings.databaseEnabled = true
         settings.setGeolocationEnabled(true)
+        
+        // Set custom User-Agent to fix Google Sign-In "disallowed_useragent" error
+        // This makes the WebView appear as a standard Chrome browser
+        val userAgent = settings.userAgentString
+        settings.userAgentString = userAgent.replace("; wv", "")
 
         webView.webViewClient = WebViewClient()
         
