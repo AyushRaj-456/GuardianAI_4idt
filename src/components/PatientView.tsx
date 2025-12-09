@@ -174,186 +174,188 @@ export default function PatientView() {
     };
 
     return (
-        <div className="p-6 max-w-md mx-auto pb-24">
-            {/* Notification Handler */}
-            {user && <PatientMedicineNotifications patientId={user.uid} />}
+        <div className="min-h-screen w-full bg-gray-50">
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24">
+                {/* Notification Handler */}
+                {user && <PatientMedicineNotifications patientId={user.uid} />}
 
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Patient Dashboard</h1>
-                    <p className="text-gray-500">Guardian AI v1.0</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                    <a href="/download" className="text-sm bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg font-medium hover:bg-blue-100 transition-colors">
-                        Get App
-                    </a>
-                    <button onClick={logout} className="text-sm text-red-600 hover:text-red-800 font-medium">
-                        Logout
-                    </button>
-                </div>
-            </div>
-
-            {/* Status Card */}
-            <div className={`p-6 rounded-2xl shadow-sm border mb-6 transition-all ${isSimulated ? "bg-orange-50 border-orange-100" : "bg-white border-gray-100"}`}>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                        <div className={`h-3 w-3 rounded-full mr-3 ${isSimulated ? "bg-orange-500 animate-pulse" : "bg-green-500 animate-pulse"}`}></div>
-                        <span className={`font-semibold ${isSimulated ? "text-orange-700" : "text-green-700"}`}>
-                            {locationStatus}
-                        </span>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Patient Dashboard</h1>
+                        <p className="text-sm sm:text-base text-gray-500">Guardian AI v1.0</p>
                     </div>
-                    {isSimulated && <AlertTriangle className="h-5 w-5 text-orange-400" />}
-                </div>
-
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200/50">
-                    <span className="text-sm text-gray-600">Simulate Location</span>
-                    <button
-                        onClick={() => setManualSimulation(!manualSimulation)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${manualSimulation ? 'bg-blue-600' : 'bg-gray-200'}`}
-                    >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${manualSimulation ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-
-                <div className="mt-4 flex items-center text-gray-500 text-sm">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {location ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : "Locating..."}
-                </div>
-            </div>
-
-            {/* Medicine Schedule Section */}
-            {user && (
-                <div className="mb-6 relative">
-                    <PatientMedicineView patientId={user.uid} />
-                    <button
-                        onClick={() => setIsMedicineManagerOpen(true)}
-                        className="w-full mt-2 bg-purple-50 text-purple-600 py-2 rounded-xl text-sm font-semibold hover:bg-purple-100 transition-colors flex items-center justify-center border border-purple-100"
-                    >
-                        <Pill className="h-4 w-4 mr-2" />
-                        Manage Medicine Cabinet
-                    </button>
-                    <button
-                        onClick={() => setIsHealthAdvisorOpen(true)}
-                        className="w-full mt-2 bg-teal-50 text-teal-600 py-2 rounded-xl text-sm font-semibold hover:bg-teal-100 transition-colors flex items-center justify-center border border-teal-100"
-                    >
-                        🌿 Open Health Advisor
-                    </button>
-                </div>
-            )}
-
-            {isMedicineManagerOpen && user && (
-                <MedicineManager
-                    patientId={user.uid}
-                    patientName={user.displayName || "Me"}
-                    currentUserRole="patient"
-                    currentUserId={user.uid}
-                    onClose={() => setIsMedicineManagerOpen(false)}
-                />
-            )}
-
-            {isHealthAdvisorOpen && user && (
-                <div className="fixed inset-0 z-[6000] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-5xl h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-                        <HealthAdvisorView
-                            user={user}
-                            role="patient"
-                            contextData={{ caretakers: requests.filter(r => r.status === 'accepted').map(r => ({ id: r.from, name: r.fromName })) }}
-                            onClose={() => setIsHealthAdvisorOpen(false)}
-                        />
+                    <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
+                        <a href="/download" className="flex-1 sm:flex-none text-center text-xs sm:text-sm bg-blue-50 text-blue-600 px-3 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                            Get App
+                        </a>
+                        <button onClick={logout} className="flex-1 sm:flex-none text-xs sm:text-sm text-red-600 hover:text-red-800 font-medium px-3 py-2">
+                            Logout
+                        </button>
                     </div>
                 </div>
-            )}
 
-            {/* Connection Requests */}
-            {requests.filter(r => r.status === 'pending').length > 0 && (
-                <div className="mb-6 bg-yellow-50 p-4 rounded-xl border border-yellow-100">
-                    <h2 className="text-sm font-bold text-yellow-800 mb-3 flex items-center">
-                        <Bell className="h-4 w-4 mr-2" />
-                        New Connection Request
-                    </h2>
-                    {requests.filter(r => r.status === 'pending').map((req) => (
-                        <div key={req.id} className="bg-white p-3 rounded-lg shadow-sm">
-                            <p className="text-sm text-gray-600 mb-3">
-                                <strong>{req.fromName}</strong> wants to monitor you.
-                            </p>
-                            <div className="flex space-x-2">
-                                <button onClick={() => handleRequest(req.id, "accepted")} className="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-bold">Accept</button>
-                                <button onClick={() => handleRequest(req.id, "rejected")} className="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded text-xs font-bold">Reject</button>
-                            </div>
+                {/* Status Card */}
+                <div className={`p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border mb-4 sm:mb-6 transition-all ${isSimulated ? "bg-orange-50 border-orange-100" : "bg-white border-gray-100"}`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                            <div className={`h-3 w-3 rounded-full mr-3 ${isSimulated ? "bg-orange-500 animate-pulse" : "bg-green-500 animate-pulse"}`}></div>
+                            <span className={`text-sm sm:text-base font-semibold ${isSimulated ? "text-orange-700" : "text-green-700"}`}>
+                                {locationStatus}
+                            </span>
                         </div>
-                    ))}
-                </div>
-            )}
+                        {isSimulated && <AlertTriangle className="h-5 w-5 text-orange-400" />}
+                    </div>
 
-            {/* Active Caretakers List for Chat */}
-            {requests.filter(r => r.status === 'accepted').length > 0 && (
-                <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <h2 className="text-sm font-bold text-blue-800 mb-3 flex items-center">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Your Caretakers
-                    </h2>
-                    {requests.filter(r => r.status === 'accepted').map((req) => (
-                        <div key={req.id} className="bg-white p-3 rounded-lg shadow-sm mb-2 flex justify-between items-center">
-                            <div>
-                                <p className="text-sm font-medium text-gray-900">{req.fromName}</p>
-                            </div>
-                            <div className="relative">
-                                <button onClick={() => setChatCaretaker(req)} className="bg-green-100 text-green-700 p-2 rounded-full hover:bg-green-200 transition-colors">
-                                    <MessageCircle className="h-4 w-4" />
-                                </button>
-                                <div className="absolute -top-1 -right-1">
-                                    <UnreadIndicator chatId={[user?.uid, req.from].sort().join("_")} currentUserId={user?.uid || ""} />
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200/50">
+                        <span className="text-sm text-gray-600">Simulate Location</span>
+                        <button
+                            onClick={() => setManualSimulation(!manualSimulation)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${manualSimulation ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${manualSimulation ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+
+                    <div className="mt-4 flex items-center text-gray-500 text-xs sm:text-sm">
+                        <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">{location ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : "Locating..."}</span>
+                    </div>
+                </div>
+
+                {/* Medicine Schedule Section */}
+                {user && (
+                    <div className="mb-4 sm:mb-6 relative">
+                        <PatientMedicineView patientId={user.uid} />
+                        <button
+                            onClick={() => setIsMedicineManagerOpen(true)}
+                            className="w-full mt-2 bg-purple-50 text-purple-600 py-3 rounded-xl text-sm font-semibold hover:bg-purple-100 transition-colors flex items-center justify-center border border-purple-100"
+                        >
+                            <Pill className="h-4 w-4 mr-2" />
+                            Manage Medicine Cabinet
+                        </button>
+                        <button
+                            onClick={() => setIsHealthAdvisorOpen(true)}
+                            className="w-full mt-2 bg-teal-50 text-teal-600 py-3 rounded-xl text-sm font-semibold hover:bg-teal-100 transition-colors flex items-center justify-center border border-teal-100"
+                        >
+                            🌿 Open Health Advisor
+                        </button>
+                    </div>
+                )}
+
+                {isMedicineManagerOpen && user && (
+                    <MedicineManager
+                        patientId={user.uid}
+                        patientName={user.displayName || "Me"}
+                        currentUserRole="patient"
+                        currentUserId={user.uid}
+                        onClose={() => setIsMedicineManagerOpen(false)}
+                    />
+                )}
+
+                {isHealthAdvisorOpen && user && (
+                    <div className="fixed inset-0 z-[6000] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                        <div className="w-full max-w-5xl h-[85vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                            <HealthAdvisorView
+                                user={user}
+                                role="patient"
+                                contextData={{ caretakers: requests.filter(r => r.status === 'accepted').map(r => ({ id: r.from, name: r.fromName })) }}
+                                onClose={() => setIsHealthAdvisorOpen(false)}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Connection Requests */}
+                {requests.filter(r => r.status === 'pending').length > 0 && (
+                    <div className="mb-6 bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                        <h2 className="text-sm font-bold text-yellow-800 mb-3 flex items-center">
+                            <Bell className="h-4 w-4 mr-2" />
+                            New Connection Request
+                        </h2>
+                        {requests.filter(r => r.status === 'pending').map((req) => (
+                            <div key={req.id} className="bg-white p-3 rounded-lg shadow-sm">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    <strong>{req.fromName}</strong> wants to monitor you.
+                                </p>
+                                <div className="flex space-x-2">
+                                    <button onClick={() => handleRequest(req.id, "accepted")} className="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-bold">Accept</button>
+                                    <button onClick={() => handleRequest(req.id, "rejected")} className="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded text-xs font-bold">Reject</button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                )}
+
+                {/* Active Caretakers List for Chat */}
+                {requests.filter(r => r.status === 'accepted').length > 0 && (
+                    <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <h2 className="text-sm font-bold text-blue-800 mb-3 flex items-center">
+                            <Shield className="h-4 w-4 mr-2" />
+                            Your Caretakers
+                        </h2>
+                        {requests.filter(r => r.status === 'accepted').map((req) => (
+                            <div key={req.id} className="bg-white p-3 rounded-lg shadow-sm mb-2 flex justify-between items-center">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">{req.fromName}</p>
+                                </div>
+                                <div className="relative">
+                                    <button onClick={() => setChatCaretaker(req)} className="bg-green-100 text-green-700 p-2 rounded-full hover:bg-green-200 transition-colors">
+                                        <MessageCircle className="h-4 w-4" />
+                                    </button>
+                                    <div className="absolute -top-1 -right-1">
+                                        <UnreadIndicator chatId={[user?.uid, req.from].sort().join("_")} currentUserId={user?.uid || ""} />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Human Chat System Overlay */}
+                {chatCaretaker && user && (
+                    <ChatSystem
+                        currentUserId={user.uid}
+                        otherUserId={chatCaretaker.from}
+                        otherUserName={chatCaretaker.fromName}
+                        onClose={() => setChatCaretaker(null)}
+                        onCaptureSnapshot={async () => {
+                            const mapElement = document.getElementById('map-container');
+                            if (mapElement) {
+                                const canvas = await html2canvas(mapElement, { useCORS: true });
+                                return canvas.toDataURL("image/png");
+                            }
+                            return null;
+                        }}
+                    />
+                )}
+
+                {/* Map Display */}
+                <div className="mb-4 sm:mb-6 h-64 sm:h-80 lg:h-96 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative" id="map-container">
+                    <Map
+                        patients={[{
+                            id: user?.uid,
+                            name: user?.displayName,
+                            location: location,
+                            isSimulated: isSimulated,
+                            lastActive: new Date().toISOString()
+                        }]}
+                        selectedPatient={null}
+                    />
                 </div>
-            )}
 
-            {/* Human Chat System Overlay */}
-            {chatCaretaker && user && (
-                <ChatSystem
-                    currentUserId={user.uid}
-                    otherUserId={chatCaretaker.from}
-                    otherUserName={chatCaretaker.fromName}
-                    onClose={() => setChatCaretaker(null)}
-                    onCaptureSnapshot={async () => {
-                        const mapElement = document.getElementById('map-container');
-                        if (mapElement) {
-                            const canvas = await html2canvas(mapElement, { useCORS: true });
-                            return canvas.toDataURL("image/png");
-                        }
-                        return null;
-                    }}
-                />
-            )}
-
-            {/* Map Display */}
-            <div className="mb-6 h-64 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative">
-                <Map
-                    patients={[{
-                        id: user?.uid,
-                        name: user?.displayName,
-                        location: location,
-                        isSimulated: isSimulated,
-                        lastActive: new Date().toISOString()
-                    }]}
-                    selectedPatient={null}
-                />
+                {/* AI Chatbot (Shared Component) */}
+                {user && (
+                    <AIChatBot
+                        user={user}
+                        role="patient"
+                        targetPatientId={user.uid}
+                        contextData={{
+                            // Pass connected caretakers for messaging
+                            caretakers: requests.filter(r => r.status === 'accepted').map(r => ({ id: r.from, name: r.fromName }))
+                        }}
+                    />
+                )}
             </div>
-
-            {/* AI Chatbot (Shared Component) */}
-            {user && (
-                <AIChatBot
-                    user={user}
-                    role="patient"
-                    targetPatientId={user.uid}
-                    contextData={{
-                        // Pass connected caretakers for messaging
-                        caretakers: requests.filter(r => r.status === 'accepted').map(r => ({ id: r.from, name: r.fromName }))
-                    }}
-                />
-            )}
         </div>
     );
 }
